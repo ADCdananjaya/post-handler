@@ -1,8 +1,10 @@
 import React, { Component } from "react";
 import http from "./services/httpService";
 import config from "./config.json";
+import { ToastContainer } from "react-toastify";
 import Input from "./components/input";
 import Post from "./components/post";
+import "react-toastify/dist/ReactToastify.css";
 
 class App extends Component {
   state = {
@@ -65,6 +67,7 @@ class App extends Component {
   render() {
     return (
       <div className="w-full flex-col p-5 py-10">
+        <ToastContainer />
         <Input
           post={this.state.post}
           onAdd={this.handleAdd}
