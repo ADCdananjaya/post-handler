@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import http from "./services/httpService";
 import config from "./config.json";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import Input from "./components/input";
 import Post from "./components/post";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,7 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 class App extends Component {
   state = {
     posts: [],
-    post: { title: "", id: -1 },
+    post: { title: "", _id: -1 },
   };
 
   async componentDidMount() {
@@ -22,26 +22,34 @@ class App extends Component {
   };
 
   handleUpdate = (id) => {
-    const updatePost = this.state.posts.find((post) => post.id === id);
-    this.setState({ post: { title: updatePost.title, id: updatePost.id } });
+    const updatePost = this.state.posts.find((post) => post._id === id);
+    this.setState({ post: { title: updatePost.title, _id: updatePost._id } });
   };
 
   handlePostApi = async (post) => {
-    const { data } = await http.post(config.apiEndPoint, post);
+    const res = await http.post(config.apiEndPoint, post);
+    return res;
   };
 
   handlePutApi = async (post) => {
-    const { data } = await http.put(config.apiEndPoint + "/" + post.id, post);
+    const res = await http.put(config.apiEndPoint + "/" + post._id, post);
+    return res;
   };
 
-  handleAdd = (post) => {
-    if (post.id == -1) {
-      post.id = this.state.posts[this.state.posts.length - 1].id + 1;
+  handleAdd = async (post) => {
+    if (post._id == -1) {
+      const tempId = Date.now().toString();
+      post._id = tempId;
       const posts = [...this.state.posts, post];
       this.setState({ posts });
-      this.handlePostApi(post);
+      const { data } = await this.handlePostApi(post);
+      if (data) {
+        const index = posts.findIndex((p) => p._id == tempId);
+        posts[index]._id = data._id;
+        this.setState({ posts });
+      }
     } else {
-      const index = this.state.posts.findIndex((p) => p.id === post.id);
+      const index = this.state.posts.findIndex((p) => p._id === post._id);
       const posts = [...this.state.posts];
       posts[index] = post;
       this.setState({ posts });
@@ -52,14 +60,14 @@ class App extends Component {
   handleDelete = async (id) => {
     const prevPosts = [...this.state.posts];
 
-    const posts = this.state.posts.filter((post) => post.id !== id);
+    const posts = this.state.posts.filter((post) => post._id !== id);
     this.setState({ posts });
 
     try {
       const res = await http.delete(config.apiEndPoint + "/" + id);
     } catch (error) {
       if (error.response && error.response.status === 404)
-        alert("This post has already been deleted!");
+        toast.error("This post has already been deleted!");
       this.setState({ posts: prevPosts });
     }
   };
@@ -76,7 +84,7 @@ class App extends Component {
         <div className="w-full flex flex-col mt-10 items-center gap-3">
           {this.state.posts.map((post) => (
             <Post
-              key={post.id}
+              key={post._id}
               post={post}
               onUpdate={this.handleUpdate}
               onDelete={this.handleDelete}
