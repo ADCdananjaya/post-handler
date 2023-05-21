@@ -5,11 +5,14 @@ import { ToastContainer, toast } from "react-toastify";
 import Input from "./components/input";
 import Post from "./components/post";
 import "react-toastify/dist/ReactToastify.css";
+import Pagination from "./components/pagination";
+import paginate from "./utils/paginate";
 
 class App extends Component {
   state = {
     posts: [],
     post: { title: "", _id: -1 },
+    currentPage: 1,
   };
 
   async componentDidMount() {
@@ -57,6 +60,20 @@ class App extends Component {
     }
   };
 
+  handlePageChange = (page) => {
+    const numberOfPages = Math.ceil(this.state.posts.length / config.pageSize);
+    const { currentPage } = this.state;
+
+    if (page === "left")
+      currentPage !== 1 && this.setState({ currentPage: currentPage - 1 });
+    else if (page === "right")
+      currentPage !== numberOfPages &&
+        this.setState({ currentPage: currentPage + 1 });
+    else {
+      this.setState({ currentPage: page });
+    }
+  };
+
   handleDelete = async (id) => {
     const prevPosts = [...this.state.posts];
 
@@ -73,6 +90,11 @@ class App extends Component {
   };
 
   render() {
+    const posts = paginate(
+      this.state.posts,
+      this.state.currentPage,
+      config.pageSize
+    );
     return (
       <div className="w-full flex-col p-5 py-10">
         <ToastContainer />
@@ -82,7 +104,7 @@ class App extends Component {
           onPostChange={this.handlePostChange}
         />
         <div className="w-full flex flex-col mt-10 items-center gap-3">
-          {this.state.posts.map((post) => (
+          {posts.map((post) => (
             <Post
               key={post._id}
               post={post}
@@ -91,6 +113,12 @@ class App extends Component {
             />
           ))}
         </div>
+        <Pagination
+          currentPage={this.state.currentPage}
+          count={this.state.posts.length}
+          size={config.pageSize}
+          onPageChange={this.handlePageChange}
+        />
       </div>
     );
   }
